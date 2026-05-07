@@ -4,47 +4,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-# # Fetch EUR/USD data
-# ticker_USD = "EURUSD=X"
-# data_USD = yf.download(ticker_USD, start="2021-01-01", end="2026-01-01")['Close']
-
-# # Calculate daily percentage change
-# returns_USD = data_USD.pct_change().dropna()
-
-# confidence_level_USD = 0.95
-# # Find the 5th percentile (the bottom 5% of days)
-# var_percentile_USD = np.percentile(returns_USD, (1 - confidence_level_USD) * 100)
-
-# portfolio_value_USD = 10_000_000  # £10 Million
-# var_amount_USD = portfolio_value_USD * var_percentile_USD
-
-# print(f"95% 1-day VaR: £{abs(var_amount_USD):,.2f}")
-
-# # create a histogram showing the distribution of returns
-# plt.hist(returns_USD, bins=100)
-# plt.show()
-
-# # ----------------------------------------- Fetch EUR/JPY ---------------------------------------------------
-# ticker_JPY = "EURJPY=X"
-# data_JPY = yf.download(ticker_JPY, start="2021-01-01", end="2026-01-01")['Close']
-
-# # Calculate daily percentage change
-# returns_JPY = data_JPY.pct_change().dropna()
-
-# confidence_level_JPY = 0.95
-# # Find the 5th percentile (the bottom 5% of days)
-# var_percentile_JPY = np.percentile(returns_JPY, (1 - confidence_level_JPY) * 100)
-
-# portfolio_value_JPY = 10_000_000  # £10 Million
-# var_amount_JPY = portfolio_value_JPY * var_percentile_JPY
-
-# print(f"95% 1-day VaR: £{abs(var_amount_JPY):,.2f}")
-
-# # create a histogram showing the distribution of returns
-# import matplotlib.pyplot as plt
-# plt.hist(returns_JPY, bins=100)
-# plt.show()
-
 # #----------------------------------------- Creating a correlation martix---------------------------------------------------
 
 
@@ -63,6 +22,9 @@ import seaborn as sns
 # sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
 # plt.title('Macro Assets Correlation Matrix')
 # plt.show()
+
+currencies = ["USD", "GBP", "EUR", "JPY", "AUD", "CAD", "CNY", "CHF", "HKD"]
+sCurrencies = ' '.join(currencies)
 
 def calculateVaR(portfolioValue, originalCurrency, conversionCurrency):
     '''
@@ -87,9 +49,6 @@ def getVaRInfo():
     Calls the calculate VaR function
     '''
     # Prompting user for information to calculate VaR
-    currencies = ["USD", "GBP", "EUR", "JPY"]
-    sCurrencies = ' '.join(currencies)
-
     # getting and validating original currency
     originalCurrency = input(f"What currency are you converting from (e.g. {sCurrencies})? ")
     while originalCurrency not in currencies:
@@ -116,8 +75,89 @@ def getVaRInfo():
     print("\nCalculating VaR at 95 conversion interval...\n")
     calculateVaR(portfolioValue, originalCurrency, conversionCurrency)
 
+def generateCorrMatrix(tickers):
+    '''
+    Generates and displays the correlation matrix for the selected assets
+    '''
+    # getting data and returns
+    data = yf.download(tickers, start="2021-01-01", end="2026-01-01")['Close']
+    returns = data.pct_change().dropna()
+
+    # creating correlation matrix
+    corr_matrix = returns.corr()
+
+    # Displaying with seaborn
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
+    plt.title('Macro Assets Correlation Matrix')
+    plt.show()
+
+def getCMData():
+    '''
+    Gets the assets/tickers required for the correlation matrix
+    Calls the function to generate the matrix
+    '''
+    # getting and validating original currency
+    originalCurrency = input(f"What currency are you converting from (e.g. {sCurrencies})? ")
+    while originalCurrency not in currencies:
+        print(f"{originalCurrency} is not a valid option - try again")
+        originalCurrency = input(f"What currency are you converting from (e.g. {sCurrencies})? ")
+    
+    # getting and display the asset/ticker option
+    displayOptions, codeOptions = generateTickerOptions(originalCurrency)
+    print("Asset Options:")
+    print('\n'.join(displayOptions))
+
+    # getting the user to pick their desired assets and validating
+    choice = input("Select which assets you would like to include, seperated by ',' (e.g. 1,4,5 or ALL - for all options): ")
+    valid = False
+
+    # generating tickers list
+    if choice == "ALL":
+        tickers = codeOptions
+    else:
+        tickers = []
+        for c in choice.split(','):
+            try:
+                i = int(c) - 1
+            except:
+                print(f"{c} is an invalid - skipped")
+            else:
+                if 0 <= i < len(codeOptions):
+                    if codeOptions[i]  not in tickers:
+                        tickers.append(codeOptions[i])
+                else:
+                    print(f"{i} is an invalid option - skipped")
+
+    # generating matrix if there are tickers
+    if len(tickers) == 0:
+        print("No valid tickers - try again")
+        getCMData()
+    else:
+        generateCorrMatrix(tickers)
+
+def generateTickerOptions(originalCurrency):
+    '''
+    Generates all the valid ticker options
+    Returns a list of the options in a displayable format and a list of the option in the yfinance format
+    '''
+    # other assets
+    displayOptions = ["1 - Gold Futures", "2 - S&P 500", "3 - 10-Year Treasury Bond Yeild", "4 - Bitcoin", "5 - Apple"]
+    codeOptions = ["GC=F", "^GSPC", "^TNX", f"BTC-{originalCurrency}", "AAPL"]
+
+    # currencies
+    i = len(codeOptions) + 1
+    for currency in currencies:
+        if currency != originalCurrency:
+            displayOptions.append(f"{i}: {currency}")
+            codeOptions.append(f"{originalCurrency}{currency}=X")
+            i += 1
+    return displayOptions, codeOptions
+
 def main():
-    getVaRInfo()
+    # getVaRInfo()
+    getCMData()
+
 
 if __name__ == "__main__":
     main()

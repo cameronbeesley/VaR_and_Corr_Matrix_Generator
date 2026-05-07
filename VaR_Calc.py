@@ -3,25 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
-# #----------------------------------------- Creating a correlation martix---------------------------------------------------
-
-
-
-# # Getting data and returns
-# tickers_MATRIX = ["EURUSD=X", "EURJPY=X", "GBPUSD=X", "GC=F", "^GSPC", "^TNX"] 
-# data_MATRIX = yf.download(tickers_MATRIX, start="2021-01-01", end="2026-01-01")['Close']
-# returns_MATRIX = data_MATRIX.pct_change().dropna()
-
-# # creating correlation matrix
-# corr_matrix = returns_MATRIX.corr()
-# print(corr_matrix)
-
-# # Displaying with seaborn
-# plt.figure(figsize=(10, 8))
-# sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
-# plt.title('Macro Assets Correlation Matrix')
-# plt.show()
+import os
 
 currencies = ["USD", "GBP", "EUR", "JPY", "AUD", "CAD", "CNY", "CHF", "HKD"]
 sCurrencies = ' '.join(currencies)
@@ -43,11 +25,14 @@ def calculateVaR(portfolioValue, originalCurrency, conversionCurrency):
     plt.hist(returns, bins=100)
     plt.show()
 
+    temp = input("\nPress enter to exit")
+
 def getVaRInfo():
     '''
     Prompts the user for the information required to calculate the desired VaR
     Calls the calculate VaR function
     '''
+    os.system('cls')
     # Prompting user for information to calculate VaR
     # getting and validating original currency
     originalCurrency = input(f"What currency are you converting from (e.g. {sCurrencies})? ")
@@ -72,7 +57,8 @@ def getVaRInfo():
             valid = True
             
     # calculating VaR
-    print("\nCalculating VaR at 95 conversion interval...\n")
+    os.system('cls')
+    print("Calculating VaR at 95 conversion interval...\n")
     calculateVaR(portfolioValue, originalCurrency, conversionCurrency)
 
 def generateCorrMatrix(tickers):
@@ -97,6 +83,7 @@ def getCMData():
     Gets the assets/tickers required for the correlation matrix
     Calls the function to generate the matrix
     '''
+    os.system('cls')
     # getting and validating original currency
     originalCurrency = input(f"What currency are you converting from (e.g. {sCurrencies})? ")
     while originalCurrency not in currencies:
@@ -104,6 +91,7 @@ def getCMData():
         originalCurrency = input(f"What currency are you converting from (e.g. {sCurrencies})? ")
     
     # getting and display the asset/ticker option
+    os.system('cls')
     displayOptions, codeOptions = generateTickerOptions(originalCurrency)
     print("Asset Options:")
     print('\n'.join(displayOptions))
@@ -113,6 +101,7 @@ def getCMData():
     valid = False
 
     # generating tickers list
+    os.system('cls')
     if choice == "ALL":
         tickers = codeOptions
     else:
@@ -127,13 +116,14 @@ def getCMData():
                     if codeOptions[i]  not in tickers:
                         tickers.append(codeOptions[i])
                 else:
-                    print(f"{i} is an invalid option - skipped")
+                    print(f"{c} is an invalid option - skipped")
 
     # generating matrix if there are tickers
     if len(tickers) == 0:
         print("No valid tickers - try again")
         getCMData()
     else:
+        print("Calculating Correlation Matrix...")
         generateCorrMatrix(tickers)
 
 def generateTickerOptions(originalCurrency):
@@ -155,9 +145,17 @@ def generateTickerOptions(originalCurrency):
     return displayOptions, codeOptions
 
 def main():
-    # getVaRInfo()
-    getCMData()
-
+    choice = ''
+    while choice != '3':
+        os.system('cls')
+        choice = ''
+        while choice not in ['1', '2', '3']:
+            choice = input("What would you like to calculate?\n1 - VaR\n2 - Correlation Matrix\n3 - Quit\nEnter your choice: ")
+        if choice == '1':
+            getVaRInfo()
+        elif choice == '2':
+            getCMData()
+    os.system('cls')
 
 if __name__ == "__main__":
     main()
